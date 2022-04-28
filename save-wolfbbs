@@ -102,7 +102,6 @@ function decorateWolfMessage(MESSAGE) {
       } else {
         HOUR = sprintf("%02d", int(substr(TIME, 0, 1)))
         MINUTE = substr(TIME, 2, 2)
-        printf HOUR, MINUTE
         INDEX += 3
       }
     }
@@ -945,9 +944,12 @@ $(document).ready(function() {
 
   window.addEventListener('popstate', function(e) {
     var day = getParam('day');
+    if (!day) {
+      day = 0;
+    }
     var $main = $('#day-' + day);
     if ($main.length === 0) {
-      $main = $('main.order');
+      $main = $('main.order'); 
       day = $main.attr('id').substring(4);
     }
     $mains.hide();
@@ -958,7 +960,7 @@ $(document).ready(function() {
       $selectMode.show();
     }
     $selectDays.removeClass('selected');
-    $('#select-day' + day).addClass('selected');
+    $('#select-day-' + day).addClass('selected');
 
     var mode = getParam('mode');
     if (mode !== 'public' && mode !== 'private' && mode !== 'grave') {
