@@ -632,6 +632,7 @@ html {
   background: #765;
   color: #DDDDDD;
   overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 body {
