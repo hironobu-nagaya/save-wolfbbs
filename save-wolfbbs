@@ -1084,7 +1084,7 @@ do
   [ -f "$WWW_DIR/$HTML" ] || {
     echo -n "$THIS: converting $XML_DIR/$XML to $WWW_DIR/$HTML..."
     xml2html "$XML_DIR/$XML" > "$WWW_DIR/$HTML"
-    sed -i -z 's/\n//g' "$WWW_DIR/$HTML"
+    (rm -f "$WWW_DIR/$HTML" && tr -d '\n' > "$WWW_DIR/$HTML") < "$WWW_DIR/$HTML"
     echo " OK"
   }
 done
