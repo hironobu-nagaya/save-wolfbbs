@@ -19,7 +19,7 @@ save-wolfbbs
 このスクリプトは、以下のパッケージに依存しています。
 
 * [GNU Bash](https://www.gnu.org/software/bash/)
-* [GNU Awk](https://www.gnu.org/software/gawk/)
+* [GNU Awk](https://www.gnu.org/software/gawk/) （他の AWK 実装で動作確認を取っていないだけですので、GNU Awk でなくても動作する可能性はあります）
 * [GNU Wget](https://www.gnu.org/software/wget/) ※
 * [curl](https://curl.se/) ※
 * [Java](https://www.java.com/)
