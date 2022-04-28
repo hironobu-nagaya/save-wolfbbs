@@ -605,7 +605,7 @@ do
 done
 
 EXIT_STATUS=0
-for COMMAND in bash gawk java
+for COMMAND in java
 do
   [ -n "$(type -pa $COMMAND)" ] || {
     EXIT_STATUS=1
