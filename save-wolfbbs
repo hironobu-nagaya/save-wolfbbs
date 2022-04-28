@@ -631,6 +631,7 @@ html {
   position: relative;
   background: #765;
   color: #DDDDDD;
+  overflow-wrap: anywhere;
 }
 
 body {
