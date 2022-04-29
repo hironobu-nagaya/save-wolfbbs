@@ -18,18 +18,18 @@ JINARCHIVER_URL="${JINARCHIVER_URL:=https://ja.osdn.net/dl/jindolf/$JINARCHIVER}
 JQUERY="${JQUERY:=jquery-3.6.0.min.js}"
 JQUERY_URL="${JQUERY_URL:=https://code.jquery.com/$JQUERY}"
 IMAGE_URL="http://ninjinix.x0.com/wolff/plugin_wolf/img/"
-ECHO="/bin/echo"
-THIS="`$ECHO $0 | sed 's%^.*/%%'`"
+
+THIS="`echo $0 | sed 's%^.*/%%'`"
 
 download() {
-  DOWNLOAD_FILE="`$ECHO $1 | sed 's%^.*/%%'`"
-  "$ECHO" -n "$THIS: downloading $1 to $2/$DOWNLOAD_FILE..."
+  DOWNLOAD_FILE="`echo $1 | sed 's%^.*/%%'`"
+  echo -n "$THIS: downloading $1 to $2/$DOWNLOAD_FILE..."
   [ -n "`type -pa wget`" ] && {
     wget -rq -O "$2/$DOWNLOAD_FILE" "$1"
   } || {
     curl -sL -o "$2/$DOWNLOAD_FILE" "$1"
   }
-  "$ECHO" " OK"
+  echo " OK"
 }
 
 xml2html() {
@@ -609,14 +609,14 @@ for COMMAND in java
 do
   [ -n "`type -pa $COMMAND`" ] || {
     EXIT_STATUS=1
-    "$ECHO" "$THIS: $COMMAND: command not found" >&2
+    echo "$THIS: $COMMAND: command not found" >&2
   }
 done
 
 [ -n "`type -pa wget`" -o -n "`type -pa curl`" ] || {
     EXIT_STATUS=1
-    "$ECHO" "$THIS: wget: command not found" >&2
-    "$ECHO" "$THIS: curl: command not found" >&2
+    echo "$THIS: wget: command not found" >&2
+    echo "$THIS: curl: command not found" >&2
 }
 
 [ "$EXIT_STATUS" -eq 0 ] || exit "$EXIT_STATUS"
@@ -1057,44 +1057,44 @@ done
 
 [ "$#" -gt 0 ] || {
   {
-    "$ECHO"
-    "$ECHO" "usage:"
-    "$ECHO" "$THIS [村番号]..."
-    "$ECHO"
-    "$ECHO" "example:"
-    "$ECHO" "$THIS F2181"
-    "$ECHO" "$THIS F2209 F2223"
-    "$ECHO"
+    echo
+    echo "usage:"
+    echo "$THIS [村番号]..."
+    echo
+    echo "example:"
+    echo "$THIS F2181"
+    echo "$THIS F2209 F2223"
+    echo
   } >&2
   exit 0
 }
 
 for ARG in "$@"
 do
-  "$ECHO" "$ARG" | grep -Eiq "^[0abcdefgz]?[0-9]+" || {
-    "$ECHO" "$THIS: $ARG: invalid value. ignore." >&2
+  echo "$ARG" | grep -Eiq "^[0abcdefg]?[0-9]+" || {
+    echo "$THIS: $ARG: invalid value. ignore." >&2
     continue
   }
-  "$ECHO" "$ARG" | grep -iq "^[0abcdefgz]" && {
-    LAND="wolf`$ECHO $ARG | cut -c 1 | tr A-Z a-z`"
-    VID="`$ECHO $ARG | cut -c 2-`"
+  echo "$ARG" | grep -iq "^[0abcdefg]" && {
+    LAND="wolf`echo $ARG | cut -c 1 | tr A-Z a-z`"
+    VID="`echo $ARG | cut -c 2-`"
   } || {
     LAND="wolf"
     VID="$ARG"
   }
-  ZERO_UNPADDED_VID="`$ECHO $VID | sed 's/^0*//'`"
+  ZERO_UNPADDED_VID="`echo $VID | sed 's/^0*//'`"
   XML="jin_${LAND}_`printf '%05d' $ZERO_UNPADDED_VID`.xml"
   [ -f "$XML_DIR/$XML" ] || {
-    "$ECHO" -n "$THIS: downloading and parsing $ARG to $XML_DIR/$XML..."
+    echo -n "$THIS: downloading and parsing $ARG to $XML_DIR/$XML..."
     java -jar "$JAR_DIR/$JINARCHIVER" -land "$LAND" -vid "$VID" -outdir "$XML_DIR"
-    "$ECHO" " OK"
+    echo " OK"
   }
   HTML="$ARG.html"
   [ -f "$WWW_DIR/$HTML" ] || {
-    "$ECHO" -n "$THIS: converting $XML_DIR/$XML to $WWW_DIR/$HTML..."
+    echo -n "$THIS: converting $XML_DIR/$XML to $WWW_DIR/$HTML..."
     xml2html "$XML_DIR/$XML" > "$WWW_DIR/$HTML"
     (rm -f "$WWW_DIR/$HTML" && tr -d '\n' > "$WWW_DIR/$HTML") < "$WWW_DIR/$HTML"
-    "$ECHO" " OK"
+    echo " OK"
   }
 done
 
