@@ -27,7 +27,7 @@ save-wolfbbs
 使い方
 ------
 
-```
+```sh
 ./save-wolfbbs [村番号]...
 ```
 
