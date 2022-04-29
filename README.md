@@ -47,9 +47,8 @@ save-wolfbbs
 人狼BBS:E   | E国                  | E
 人狼BBS:F   | F国                  | F
 人狼BBS:G   | G国                  | G
-人狼BBS:Z   | Z国                  | Z
 
-※ [旧人狼BBS 1](http://ninjinix.x0.com/wolf_old/) は対応していません
+※ [旧人狼BBS 1](http://ninjinix.x0.com/wolf_old/), [人狼BBS:Z](https://ninjinix.x0.com/wolfz/) は対応していません
 
 ### 環境変数
 
