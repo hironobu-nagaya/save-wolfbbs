@@ -216,7 +216,7 @@ function getValue(KEY) {
       FORMAL_NAME = getValue("formalName")
     }
     if (hasValue("graveIconURI")) {
-      GRAVE_ICON_URI = getValue("graveIconURI")
+      GRAVE_ICON_URI = "plugin_wolf/img/" gensub(/.*\//, "", 1, getValue("graveIconURI"))
     }
     if (hasValue("landId")) {
       LAND_ID = getValue("landId")
@@ -238,7 +238,7 @@ function getValue(KEY) {
       SHORT_NAME = getValue("shortName")
     }
     if (hasValue("faceIconURI")) {
-      FACE_ICON_URI = getValue("faceIconURI")
+      FACE_ICON_URI = "plugin_wolf/img/" gensub(/.*\//, "", 1, getValue("faceIconURI"))
     }
   } else {
     AVATARS[AVATAR_ID, 1] = FULL_NAME
@@ -636,7 +636,8 @@ html {
 }
 
 body {
-  margin: 0 10% 0 10%;
+  margin: auto;
+  width: 80%;
   padding-bottom: 0.5px;
   min-width: 500px;
   height: min-content;
