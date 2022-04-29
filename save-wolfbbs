@@ -1081,7 +1081,7 @@ do
     LAND="wolf"
     VID="$ARG"
   }
-  XML="jin_${LAND}_$(printf "%05d" "${VID##0}").xml"
+  XML="jin_${LAND}_$(printf "%05d" $(sed 's/^0*//' <<< "${VID##0}")).xml"
   [ -f "$XML_DIR/$XML" ] || java -jar "$JAR_DIR/$JINARCHIVER" -land "$LAND" -vid "$VID" -outdir "$XML_DIR"
 
   HTML="$(tr a-z A-Z <<< "${LAND:4}")$VID.html"
