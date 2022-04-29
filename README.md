@@ -37,15 +37,15 @@ save-wolfbbs
 
 公式の呼称  | まとめサイトでの呼称 | プレフィックス
 :---------- | :------------------- | :-------------
-旧人狼BBS 2 | 前の国               | （なし）
-人狼BBS     | 本国                 | 0（ゼロ）
-人狼BBS:A   | A国                  | A
-人狼BBS:B   | B国                  | B
-人狼BBS:C   | C国                  | C
-人狼BBS:D   | D国                  | D
-人狼BBS:E   | E国                  | E
-人狼BBS:F   | F国                  | F
 人狼BBS:G   | G国                  | G
+人狼BBS:F   | F国                  | F
+人狼BBS:E   | E国                  | E
+人狼BBS:D   | D国                  | D
+人狼BBS:C   | C国                  | C
+人狼BBS:B   | B国                  | B
+人狼BBS:A   | A国                  | A
+人狼BBS     | 本国                 | 0（ゼロ）
+旧人狼BBS 2 | 前の国               | （なし）
 
 ※ [旧人狼BBS 1](http://ninjinix.x0.com/wolf_old/), [人狼BBS:Z](https://ninjinix.x0.com/wolfz/) は対応していません
 
@@ -85,6 +85,24 @@ body {
   max-width: 500px;
   background: #000000;
 }
+```
+
+### ログを一括で取得したい
+
+以下のコマンドで各国の村のログを一括で取得できます。   
+多少なりともサーバの負担になるかと思いますので、  
+ピーク時は避けるなど負荷分散にご協力下さい。
+
+```sh
+./save-wolfbbs `seq 2087 | awk '{printf("G%03d ",$0)}'`                # G国（ G001 ～ G2087 ）
+./save-wolfbbs `seq 100 2232 | awk '{if (!/1945|1973/) print "F" $0}'` # F国（ F100 ～ F2232、 F1945, F1973 は欠番）
+./save-wolfbbs `seq 100 199 | sed 's/^/E/'`                            # E国（ E100 ～ E199 ）
+./save-wolfbbs `seq 100 703 | sed 's/^/D/'`                            # D国（ D100 ～ D703 ）
+./save-wolfbbs `seq 100 1435 | sed 's/^/C/'`                           # C国（ C100 ～ C1435 ）
+./save-wolfbbs `seq 100 182 | awk '{if (!/149/) print "B" $0}'`        # B国（ B100 ～ B182、 B149 は欠番）
+./save-wolfbbs `seq 100 366 | sed 's/^/A/'`                            # A国（ A100 ～ A366 ）
+./save-wolfbbs `seq 100 744 | sed 's/^/0/'`                            # 本国（ 0100 ～ 0366 ）
+./save-wolfbbs `seq 94`                                                # 前の国（ 1 ～ 94 ）
 ```
 
 参照
