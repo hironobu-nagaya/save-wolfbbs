@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 ###
 #
@@ -19,20 +19,21 @@ JQUERY="${JQUERY:=jquery-3.6.0.min.js}"
 JQUERY_URL="${JQUERY_URL:=https://code.jquery.com/$JQUERY}"
 IMAGE_URL="http://ninjinix.x0.com/wolff/plugin_wolf/img/"
 
-THIS="${0##*/}"
+THIS="`echo $0 | sed 's%^.*/%%'`"
 
 download() {
-  echo -n "$THIS: downloading $1 to $2/${1##*/}..."
-  [ -n "$(type -pa wget)" ] && {
-    wget -rq -O "$2/${1##*/}" "$1"
+  DOWNLOAD_FILE="`echo $1 | sed 's%^.*/%%'`"
+  echo -n "$THIS: downloading $1 to $2/$DOWNLOAD_FILE..."
+  [ -n "`type -pa wget`" ] && {
+    wget -rq -O "$2/$DOWNLOAD_FILE" "$1"
   } || {
-    curl -sL -o "$2/${1##*/}" "$1"
+    curl -sL -o "$2/$DOWNLOAD_FILE" "$1"
   }
   echo " OK"
 }
 
 xml2html() {
-  awk -f - "$@" <<< '
+  awk '
 BEGIN {
   MESSAGE = ""
   READING_TEXT = 0
@@ -591,7 +592,7 @@ function getValue(KEY) {
 /^<\/village>$/ {
     print "<main id=\"day-" MAIN_COUNT "\" class=\"order\" style=\"display:none;\"><article><section class=\"order\">終了しました。</section></article></main><footer>" FOOTER "</footer></body></html>"
 }
-'
+' "$@"
 }
 
 [ -d "$WORK_DIR" ] || mkdir -pv "$WORK_DIR"
@@ -606,13 +607,13 @@ done
 EXIT_STATUS=0
 for COMMAND in java
 do
-  [ -n "$(type -pa $COMMAND)" ] || {
+  [ -n "`type -pa $COMMAND`" ] || {
     EXIT_STATUS=1
     echo "$THIS: $COMMAND: command not found" >&2
   }
 done
 
-[ -n "$(type -pa wget)" -o -n "$(type -pa curl)" ] || {
+[ -n "`type -pa wget`" -o -n "`type -pa curl`" ] || {
     EXIT_STATUS=1
     echo "$THIS: wget: command not found" >&2
     echo "$THIS: curl: command not found" >&2
@@ -949,7 +950,7 @@ $(document).ready(function() {
     }
     var $main = $('#day-' + day);
     if ($main.length === 0) {
-      $main = $('main.order'); 
+      $main = $('main.order');
       day = $main.attr('id').substring(4);
     }
     $mains.hide();
@@ -1049,9 +1050,9 @@ EOF
 }
 
 [ -f "$JAR_DIR/$JINARCHIVER" ] || download "$JINARCHIVER_URL" "$JAR_DIR"
-for IMAGE in $(seq -f '%02g' 1 20 | awk '{print "face" $0 ".jpg"}') face99.jpg title.jpg
+for IMAGE in `seq -f '%02g' 1 20 | awk '{print "face" $0 ".jpg"}'` face99.jpg title.jpg
 do
-    [ -f "$WWW_DIR/plugin_wolf/img/$IMAGE" ] || download "$IMAGE_URL/$IMAGE" "$WWW_DIR/plugin_wolf/img"
+  [ -f "$WWW_DIR/plugin_wolf/img/$IMAGE" ] || download "$IMAGE_URL/$IMAGE" "$WWW_DIR/plugin_wolf/img"
 done
 
 [ "$#" -gt 0 ] || {
@@ -1070,21 +1071,25 @@ done
 
 for ARG in "$@"
 do
-  egrep -q "^[0abcdefgz]?[0-9]+" <<< "${ARG,}" || {
+  echo "$ARG" | grep -Eiq "^[0abcdefgz]?[0-9]+" || {
     echo "$THIS: $ARG: invalid value. ignore." >&2
     continue
   }
-  egrep -q "^[0abcdefgz]" <<< "${ARG,}" && {
-    LAND="wolf$(tr A-Z a-z <<< "${ARG:0:1}")"
-    VID="${ARG:1}"
+  echo "$ARG" | grep -iq "^[0abcdefgz]" && {
+    LAND="wolf`echo $ARG | cut -c 1 | tr A-Z a-z`"
+    VID="`echo $ARG | cut -c 2-`"
   } || {
     LAND="wolf"
     VID="$ARG"
   }
-  XML="jin_${LAND}_$(printf "%05d" $(sed 's/^0*//' <<< "${VID##0}")).xml"
-  [ -f "$XML_DIR/$XML" ] || java -jar "$JAR_DIR/$JINARCHIVER" -land "$LAND" -vid "$VID" -outdir "$XML_DIR"
-
-  HTML="$(tr a-z A-Z <<< "${LAND:4}")$VID.html"
+  ZERO_UNPADDED_VID="`echo $VID | sed 's/^0*//'`"
+  XML="jin_${LAND}_`printf '%05d' $ZERO_UNPADDED_VID`.xml"
+  [ -f "$XML_DIR/$XML" ] || {
+    echo -n "$THIS: downloading and parsing $ARG to $XML_DIR/$XML..."
+    java -jar "$JAR_DIR/$JINARCHIVER" -land "$LAND" -vid "$VID" -outdir "$XML_DIR"
+    echo " OK"
+  }
+  HTML="$ARG.html"
   [ -f "$WWW_DIR/$HTML" ] || {
     echo -n "$THIS: converting $XML_DIR/$XML to $WWW_DIR/$HTML..."
     xml2html "$XML_DIR/$XML" > "$WWW_DIR/$HTML"
