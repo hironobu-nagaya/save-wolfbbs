@@ -71,18 +71,18 @@ WWW_DIR    | XML ファイルから生成する HTML ファイル格納先ディ
 FAQ
 ----
 
-### 表示の幅が広すぎます
+### ブラウザ閲覧時の表示の幅が広すぎます
 
 CSS の body セレクタの内容を修正して下さい。  
 CSS ファイルは `$WWW_DIR/plugin_wolf/css/wolfbbs.css` です。
 
-オリジナルと同じように幅の最大値を 500px としたい場合、  
+オリジナルと同じように幅を 500px で固定したい場合、  
 以下のように設定すると良いでしょう。
 
 ```css
 body {
   margin: auto;
-  max-width: 500px;
+  width: 500px;
   background: #000000;
 }
 ```
