@@ -26,7 +26,7 @@ download() {
   DOWNLOAD_FILE="`\"$ECHO\" \"$1\" | sed 's%^.*/%%'`"
   "$ECHO" -n "$THIS: downloading $1 to $2/$DOWNLOAD_FILE..."
   [ -n "`type -pa wget`" ] && {
-    wget -rq -O "$2/$DOWNLOAD_FILE" "$1"
+    wget -rq -o /dev/null -O "$2/$DOWNLOAD_FILE" "$1"
   } || {
     curl -sL -o "$2/$DOWNLOAD_FILE" "$1"
   }
