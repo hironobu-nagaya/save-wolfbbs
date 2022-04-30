@@ -2,7 +2,7 @@
 
 ###
 #
-# save-wolfbbs - 人狼BBSのログをローカルに保存します。
+# save-wolfbbs - 人狼BBSの過去ログを HTML ファイルとしてローカルに保存します。
 #
 # usage:
 # ./save-wolfbbs [村番号]...
@@ -17,12 +17,13 @@ JINARCHIVER="${JINARCHIVER:=jinarchiver-1.504.6.jar}"
 JINARCHIVER_URL="${JINARCHIVER_URL:=https://ja.osdn.net/dl/jindolf/$JINARCHIVER}"
 JQUERY="${JQUERY:=jquery-3.6.0.min.js}"
 JQUERY_URL="${JQUERY_URL:=https://code.jquery.com/$JQUERY}"
-IMAGE_URL="http://ninjinix.x0.com/wolff/plugin_wolf/img/"
+FAVICON_URL="http://ninjinix.x0.com/wolfg/favicon.ico"
+IMAGE_URL_BASE="http://ninjinix.x0.com/wolfg/plugin_wolf/img"
 ECHO="/bin/echo"
-THIS="`$ECHO $0 | sed 's%^.*/%%'`"
+THIS="`\"$ECHO\" \"$0\" | sed 's%^.*/%%'`"
 
 download() {
-  DOWNLOAD_FILE="`$ECHO $1 | sed 's%^.*/%%'`"
+  DOWNLOAD_FILE="`\"$ECHO\" \"$1\" | sed 's%^.*/%%'`"
   "$ECHO" -n "$THIS: downloading $1 to $2/$DOWNLOAD_FILE..."
   [ -n "`type -pa wget`" ] && {
     wget -rq -O "$2/$DOWNLOAD_FILE" "$1"
@@ -199,11 +200,11 @@ function decorateWolfgMessage(MESSAGE) {
 }
 
 function hasValue(KEY) {
-  return $0 ~ KEY "=\".*\""
+  return $0 ~ KEY "=\"[^\"]*\""
 }
 
 function getValue(KEY) {
-  INDEX = match($0, KEY "=\".*\"")
+  INDEX = match($0, KEY "=\"[^\"]*\"")
   return substr($0, INDEX + length(KEY) + 2, index(substr($0, INDEX + length(KEY) + 3), "\""))
 }
 
@@ -222,7 +223,7 @@ function getValue(KEY) {
       LAND_ID = getValue("landId")
     }
   } else {
-    print "<html><head><title>" FORMAL_NAME " " VILLAGE_FULL_NAME "</title><meta http-equiv=\"Content-Type\" content=\"text/html;charset=UTF-8\"><link rel=\"stylesheet\" type=\"text/css\" href=\"plugin_wolf/css/wolfbbs.css\"><script src=\"plugin_wolf/js/jquery.js\"></script><script src=\"plugin_wolf/js/wolfbbs.js\"/></script></head><body>"
+    print "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html;charset=UTF-8\"><title>" FORMAL_NAME " " VILLAGE_FULL_NAME "</title><link rel=\"icon\" href=\"plugin_wolf/img/favicon.ico\"><link rel=\"stylesheet\" type=\"text/css\" href=\"plugin_wolf/css/wolfbbs.css\"><script src=\"plugin_wolf/js/jquery.js\"></script><script src=\"plugin_wolf/js/wolfbbs.js\"/></script></head><body>"
   }
 }
 
@@ -578,7 +579,7 @@ function getValue(KEY) {
       if (HANDLE_PUBLIC_MESSAGE_COUNT) {
         PUBLIC_MESSAGE_COUNT++
       }
-      print "<article id=\"" XNAME "\" class=\"" (TYPE != "public" ? TYPE " " : "") "time-" (MAIN_COUNT - 1) "d" gensub(/:/, "", 1, TIME) (HANDLE_PUBLIC_MESSAGE_COUNT ? " message-" PUBLIC_MESSAGE_COUNT : "") "\"><header>" (HANDLE_PUBLIC_MESSAGE_COUNT ? "<span class=\"message-number\">" PUBLIC_MESSAGE_COUNT ".</span>" : "") AVATARS[AVATAR_ID,1] "<span class=\"time\">" TIME "</span></header><section><figure><img src=\"./" (TYPE == "grave" ? GRAVE_ICON_URI : AVATARS[AVATAR_ID,3]) "\"/></figure><section class=\"" TYPE "\">" decorateMessage(MESSAGE) "</section></article>"
+      print "<article id=\"" XNAME "\" class=\"" (TYPE != "public" ? TYPE " " : "") "time-" (MAIN_COUNT - 1) "d" gensub(/:/, "", 1, TIME) (HANDLE_PUBLIC_MESSAGE_COUNT ? " message-" PUBLIC_MESSAGE_COUNT : "") "\"><header>" (HANDLE_PUBLIC_MESSAGE_COUNT ? "<span class=\"message-number\">" PUBLIC_MESSAGE_COUNT ".</span>" : "") "<span>" AVATARS[AVATAR_ID,1] "</span><span class=\"time\">" TIME "</span></header><section><figure><img src=\"./" (TYPE == "grave" ? GRAVE_ICON_URI : AVATARS[AVATAR_ID,3]) "\"/></figure><section class=\"" TYPE "\">" decorateMessage(MESSAGE) "</section></article>"
       MESSAGE = ""
       READING_TEXT = 0
     }
@@ -595,6 +596,41 @@ function getValue(KEY) {
 ' "$@"
 }
 
+function generateSelectDay() {
+  awk '
+function getValue(KEY) {
+  INDEX = match($0, KEY "=\"[^\"]*\"")
+  return substr($0, INDEX + length(KEY) + 2, index(substr($0, INDEX + length(KEY) + 3), "\""))
+}
+
+/^<main/ {
+  DAY = substr(getValue("id"), 5)
+  switch(getValue("class")) {
+    case "prologue": MESSAGE = "プロローグ"; break
+    case "epilogue": MESSAGE = "エピローグ"; break
+    case "order": MESSAGE = "終了"; break
+    default: MESSAGE = DAY "日目"; break
+  }
+  printf("<a id=\"select-day-" DAY "\"" (DAY == 0 ? " class=\"selected\"" : "") ">" MESSAGE "</a>")
+}
+' "$@"
+}
+
+EXIT_STATUS=0
+
+[ -n "`type -pa java`" ] || {
+    "$ECHO" "$THIS: java: command not found"
+    EXIT_STATUS=1
+} >&2
+
+[ -n "`type -pa wget`" -o -n "`type -pa curl`" ] || {
+    "$ECHO" "$THIS: wget: command not found"
+    "$ECHO" "$THIS: curl: command not found"
+    EXIT_STATUS=1
+} >&2
+
+[ "$EXIT_STATUS" -eq 0 ] || exit "$EXIT_STATUS"
+
 [ -d "$WORK_DIR" ] || mkdir -pv "$WORK_DIR"
 [ -d "$JAR_DIR" ] || mkdir -pv "$JAR_DIR"
 [ -d "$XML_DIR" ] || mkdir -pv "$XML_DIR"
@@ -603,23 +639,6 @@ for DIR in css img js
 do
   [ -d "$WWW_DIR/plugin_wolf/$DIR" ] || mkdir -pv "$WWW_DIR/plugin_wolf/$DIR"
 done
-
-EXIT_STATUS=0
-for COMMAND in java
-do
-  [ -n "`type -pa $COMMAND`" ] || {
-    EXIT_STATUS=1
-    "$ECHO" "$THIS: $COMMAND: command not found" >&2
-  }
-done
-
-[ -n "`type -pa wget`" -o -n "`type -pa curl`" ] || {
-    EXIT_STATUS=1
-    "$ECHO" "$THIS: wget: command not found" >&2
-    "$ECHO" "$THIS: curl: command not found" >&2
-}
-
-[ "$EXIT_STATUS" -eq 0 ] || exit "$EXIT_STATUS"
 
 [ -f "$WWW_DIR/plugin_wolf/css/wolfbbs.css" ] || cat > "$WWW_DIR/plugin_wolf/css/wolfbbs.css" << 'EOF'
 * {
@@ -659,10 +678,6 @@ p {
   margin-bottom: 16px;
 }
 
-p#select-day {
-  min-height: 1.3em;
-}
-
 strong {
   font-weight: normal;
   color: #FF4444;
@@ -679,7 +694,6 @@ figure {
 img.title {
   width:100%;
 }
-
 
 div[id^="time-referenced-"], div[id^="message-referenced-"] {
   margin-left: 3em;
@@ -804,7 +818,7 @@ span.message-number {
 
 span.time {
   display: inline-block;
-  text-indent: 0.25em;
+  margin-left: 0.5em;
   color: #888888;
 }
 
@@ -855,22 +869,6 @@ EOF
 $(document).ready(function() {
   history.pushState(null, null, null);
   var $mains = $('html > body > main');
-  var $selectDay = $('#select-day');
-  $mains.each(function() {
-    var name;
-    var $main = $(this);
-    if ($main.hasClass('prologue')) {
-      name = "プロローグ";
-    } else if ($main.hasClass('epilogue')) {
-      name = "エピローグ";
-    } else if ($main.hasClass('order')) {
-      name = "終了"
-    } else {
-      name = $main.attr('id').substring(4) + "日目";
-    }
-    $selectDay.append($('<a id="select-' + $main.attr('id') + '"' + ($main.attr('id') == 'day-0' ? ' class="selected"' : '') + '>' + name + '</a>'));
-  });
-
   var $selectMode = $('#select-mode');
   var $selectDays = $('#select-day > a');
   $selectDays.click(function() {
@@ -1050,15 +1048,20 @@ $(document).ready(function() {
 EOF
 
 [ -f "$WWW_DIR/plugin_wolf/js/$JQUERY" ] || {
-  download "$JQUERY_URL" "$WWW_DIR/plugin_wolf/js" &&
+  download "$JQUERY_URL" "$WWW_DIR/plugin_wolf/js"
+}
+
+[ -f "$WWW_DIR/plugin_wolf/js/jquery.js" ] || {
   ln -sfv "$JQUERY" "$WWW_DIR/plugin_wolf/js/jquery.js"
 }
 
 [ -f "$JAR_DIR/$JINARCHIVER" ] || download "$JINARCHIVER_URL" "$JAR_DIR"
-for IMAGE in `seq -f '%02g' 1 20 | awk '{print "face" $0 ".jpg"}'` face99.jpg title.jpg
+
+for IMAGE in `seq 1 20 | awk '{printf("face%02d.jpg\n", $0)}'` face99.jpg title.jpg
 do
-  [ -f "$WWW_DIR/plugin_wolf/img/$IMAGE" ] || download "$IMAGE_URL/$IMAGE" "$WWW_DIR/plugin_wolf/img"
+  [ -f "$WWW_DIR/plugin_wolf/img/$IMAGE" ] || download "$IMAGE_URL_BASE/$IMAGE" "$WWW_DIR/plugin_wolf/img"
 done
+[ -f "$WWW_DIR/plugin_wolf/img/favicon.ico" ] || download "$FAVICON_URL" "$WWW_DIR/plugin_wolf/img"
 
 [ "$#" -gt 0 ] || {
   {
@@ -1081,14 +1084,14 @@ do
     continue
   }
   "$ECHO" "$ARG" | grep -iq "^[0abcdefg]" && {
-    LAND="wolf`$ECHO $ARG | cut -c 1 | tr A-Z a-z`"
-    VID="`$ECHO $ARG | cut -c 2-`"
+    LAND="wolf`\"$ECHO\" \"$ARG\" | cut -c 1 | tr A-Z a-z`"
+    VID="`\"$ECHO\" \"$ARG\" | cut -c 2-`"
   } || {
     LAND="wolf"
     VID="$ARG"
   }
-  ZERO_UNPADDED_VID="`$ECHO $VID | sed 's/^0*//'`"
-  XML="jin_${LAND}_`printf '%05d' $ZERO_UNPADDED_VID`.xml"
+  ZERO_UNPADDED_VID="`\"$ECHO\" \"$VID\" | sed 's/^0*//'`"
+  XML="jin_${LAND}_`printf '%05d' \"$ZERO_UNPADDED_VID\"`.xml"
   [ -f "$XML_DIR/$XML" ] || {
     "$ECHO" -n "$THIS: downloading and parsing $ARG to $XML_DIR/$XML..."
     java -jar "$JAR_DIR/$JINARCHIVER" -land "$LAND" -vid "$VID" -outdir "$XML_DIR"
@@ -1098,7 +1101,8 @@ do
   [ -f "$WWW_DIR/$HTML" ] || {
     "$ECHO" -n "$THIS: converting $XML_DIR/$XML to $WWW_DIR/$HTML..."
     xml2html "$XML_DIR/$XML" > "$WWW_DIR/$HTML"
-    (rm -f "$WWW_DIR/$HTML" && tr -d '\n' > "$WWW_DIR/$HTML") < "$WWW_DIR/$HTML"
+    SELECT_DAY="`generateSelectDay \"$WWW_DIR/$HTML\"`"
+    (rm -f "$WWW_DIR/$HTML" && sed 's%<p id="select-day"></p>%<p id="select-day">'"$SELECT_DAY"'</p>%' | tr -d '\n' > "$WWW_DIR/$HTML") < "$WWW_DIR/$HTML"
     "$ECHO" " OK"
   }
 done
