@@ -659,6 +659,10 @@ p {
   margin-bottom: 16px;
 }
 
+p#select-day {
+  min-height: 1.3em;
+}
+
 strong {
   font-weight: normal;
   color: #FF4444;
