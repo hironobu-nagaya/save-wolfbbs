@@ -650,7 +650,7 @@ html {
   position: relative;
   background: #765;
   color: #DDDDDD;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: break-all;
 }
 
@@ -694,6 +694,7 @@ figure {
 img.title {
   width:100%;
 }
+
 
 div[id^="time-referenced-"], div[id^="message-referenced-"] {
   margin-left: 3em;
@@ -739,13 +740,9 @@ section.public:after {
   content: "";
   display: inline-block;
   position: absolute;
-  bottom: 43%;
+  bottom: calc(50% - 4px);
   left: -8px;
   border-top: 8px solid transparent;
-  border-right: 8px solid #FFFFFF;
-}
-
-section.public:after {
   border-right: 8px solid #FFFFFF;
 }
 
@@ -755,7 +752,7 @@ section.private:before, section.grave:before, section.wolf:before {
   left: -13px;
   width: 4px;
   height: 4px;
-  bottom: 42%;
+  bottom: calc(50% - 6px);
   border-radius: 50%;
 }
 
@@ -765,7 +762,7 @@ section.private:after,section.grave:after, section.wolf:after {
   left: -8px;
   width: 7px;
   height: 7px;
-  bottom: 43%;
+  bottom: calc(50% - 4px);
   border-radius: 50%;
 }
 
@@ -818,7 +815,7 @@ span.message-number {
 
 span.time {
   display: inline-block;
-  margin-left: 0.5em;
+  text-indent: 0.5em;
   color: #888888;
 }
 
