@@ -648,7 +648,7 @@ done
 
 html {
   position: relative;
-  background: #765;
+  background: #776655;
   color: #DDDDDD;
   overflow-wrap: break-word;
   word-break: break-all;
@@ -695,7 +695,6 @@ img.title {
   width:100%;
 }
 
-
 div[id^="time-referenced-"], div[id^="message-referenced-"] {
   margin-left: 3em;
   filter: grayscale(25%);
@@ -704,6 +703,31 @@ div[id^="time-referenced-"], div[id^="message-referenced-"] {
 article {
   width: 100%;
   margin: 8px 0 16px 0;
+}
+
+article section {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+section.announce, section.order {
+  padding: 8px 12px 8px 12px;
+}
+
+section.announce {
+  border: 1px solid #DDDDDD;
+}
+
+section.order {
+  border: 1px solid #FF4444;
+  color: #FF4444;
+}
+
+section.extra {
+  border: 1px solid #888888;
+  padding: 8px;
+  color: #888888;
 }
 
 section.public, section.private, section.wolf, section.grave {
@@ -756,7 +780,7 @@ section.private:before, section.grave:before, section.wolf:before {
   border-radius: 50%;
 }
 
-section.private:after,section.grave:after, section.wolf:after {
+section.private:after, section.grave:after, section.wolf:after {
   content: "";
   position: absolute;
   left: -8px;
@@ -778,45 +802,8 @@ section.wolf:before, section.wolf:after {
   background: #ff7777;
 }
 
-article section {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-section.announce, section.order {
-  padding: 8px 12px 8px 12px;
-}
-
-section.announce {
-  border: 1px solid #DDDDDD;
-}
-
-section.order {
-  border: 1px solid #FF4444;
-  color: #FF4444;
-}
-
-section.extra {
-  border: 1px solid #888888;
-  padding: 8px;
-  color: #888888;
-}
-
 section > figure {
   max-width: 40px;
-}
-
-span.message-number {
-  display: inline-block;
-  margin-right: 0.5em;
-  color: #666666;
-}
-
-span.time {
-  display: inline-block;
-  text-indent: 0.5em;
-  color: #888888;
 }
 
 section.public > a {
@@ -833,6 +820,18 @@ section.wolf > a {
 
 section.grave > a {
   color: #0000FF;
+}
+
+span.message-number {
+  display: inline-block;
+  margin-right: 0.5em;
+  color: #666666;
+}
+
+span.time {
+  display: inline-block;
+  margin-left: 0.5em;
+  color: #888888;
 }
 
 a {
