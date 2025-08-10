@@ -1,0 +1,289 @@
+#!/bin/bash
+# Begin bin/save-wolfbbs
+
+set -e
+
+readonly PROJECT_HOME_DIR="${PROJECT_HOME_DIR:=$(
+  (
+    cd "$(realpath "${0%/*}/..")"
+    pwd
+  )
+)}"
+readonly DEFAULT_DEST_DIR="$PROJECT_HOME_DIR/dest"
+readonly DEFAULT_WWW_DIR="$DEFAULT_DEST_DIR/www"
+readonly DEFAULT_FORCE_REGENERATE=0
+readonly DEFAULT_VERBOSE=0
+
+readonly JINARCHIVER_VERSION="${JINARCHIVER_VERSION:=1.504.10}"
+readonly JINARCHIVER="${JINARCHIVER:=jinarchiver-$JINARCHIVER_VERSION.jar}"
+readonly JINARCHIVER_URL="${JINARCHIVER_URL:=https://github.com/olyutorskii/JinArchiver/releases/download/v$JINARCHIVER_VERSION/$JINARCHIVER}"
+readonly JQUERY_VERSION="${JQUERY_VERSION:=3.7.1}"
+readonly JQUERY="${JQUERY:=jquery-$JQUERY_VERSION.min.js}"
+readonly JQUERY_URL="${JQUERY_URL:=https://code.jquery.com/$JQUERY}"
+readonly WOLFBBS_FAVICON_URL="http://ninjinix.x0.com/wolfg/favicon.ico"
+readonly WOLFBBS_IMAGE_URL_BASE="http://ninjinix.x0.com/wolfg/plugin_wolf/img"
+
+readonly ECHO="${ECHO:=echo}"
+readonly GREP="${GREP:=grep}"
+readonly SED="${SED:=sed}"
+readonly AWK="${AWK:=awk}"
+readonly JAVA="${JAVA:=java}"
+readonly MINIFY_CSS="${MINIFY_CSS:=$PROJECT_HOME_DIR/bin/minify-css}"
+readonly MINIFY_HTML="${MINIFY_HTML:=$PROJECT_HOME_DIR/bin/minify-html}"
+readonly MINIFY_JS="${MINIFY_JS:=$PROJECT_HOME_DIR/bin/minify-js}"
+readonly XML2HTML_AWK="${XML2HTML_AWK:=$PROJECT_HOME_DIR/libexec/xml2html.awk}"
+readonly GENERATE_SELECT_DAY_AWK="${GENERATE_SELECT_DAY_AWK:=$PROJECT_HOME_DIR/libexec/generate-select-day.awk}"
+export ECHO GREP SED AWK
+
+STATUS=0
+for COMMAND in curl "$JAVA"
+do
+  if "$GREP" -Fsq / <<< "$COMMAND"
+  then
+    if [ ! -e "$COMMAND" ]
+    then
+      STATUS=1
+      "$ECHO" "${0##*/}: ${COMMAND##*/}: executable not found" >&2
+    elif [ ! -x "$COMMAND" ]
+    then
+      STATUS=1
+      "$ECHO" "${0##*/}: ${COMMAND##*/}: not executable" >&2
+    fi
+  elif ! which "$COMMAND" > /dev/null 2>&1
+  then
+    STATUS=1
+    "$ECHO" "${0##*/}: ${COMMAND##*/}: command not found" >&2
+  fi
+done
+unset COMMAND
+
+if [ "$STATUS" -ne 0 ]
+then
+  exit "$STATUS"
+fi
+unset STATUS
+
+function print-help() {
+  cat << EOF
+
+NAME
+
+       ${0##:/} - save WolfBBS villages as HTML.
+
+SYNOPSIS
+
+       ${0##:/} [OPTION]... [VILLAGE_NUMBER]...
+
+OPTION
+
+       -d DIRECTORY
+           specify dest dicectory (default is $DEFAULT_DEST_DIR)
+
+       -w DIRECTORY
+           specify www dicectory (default is $DEFAULT_WWW_DIR)
+
+       -f
+           regenerate file if already exists
+
+       -q
+           quiet output$([ "$DEFAULT_VERBOSE" -ne 0 ] || echo " (default)")
+
+       -v
+           verbose output$([ "$DEFAULT_VERBOSE" -eq 0 ] || echo " (default)")
+
+       -h
+           print help and exit
+
+EXAMPLE
+
+       ${0##:/} -v
+           save all village log to $DEFAULT_DEST_DIR directory and print its progress.
+
+       ${0##:/} F2181
+           save F2181 village log to $DEFAULT_DEST_DIR directory.
+
+       ${0##:/} -d /srv/wolfbbs F2209 F2223
+           save F2209 and F2223 village log to /srv/wolfbbs directory.
+
+EOF
+}
+
+function print-all-village-numbers() {
+  "$ECHO" \
+    {1..94} \
+    $(seq 100 744 | sed 's/^/0/') \
+    $(seq 100 366 | sed 's/^/A/') \
+    $(seq 100 182 | awk '!/^149$/' | sed 's/^/B/') \
+    $(seq 100 1435 | sed 's/^/C/') \
+    $(seq 100 703 | sed 's/^/D/') \
+    $(seq 100 199 | sed 's/^/E/') \
+    $(seq 100 2232 | awk '!/^(1945|1973)$/' | sed 's/^/F/') \
+    $(seq 2087 | awk '{ printf("G%03d ", $0) }')
+}
+
+function echo-if-verbose() {
+  if [ "$VERBOSE" -eq 0 ]
+  then
+    return
+  fi
+  "$ECHO" "$@"
+}
+
+download() {
+  echo-if-verbose -n "${3:-"$0"}: downloading $1 to $2/${1##*/} ..."
+  if [ -e "$2/${1##*/}" ]
+  then
+    if [ "$FORCE_REGENERATE" -eq 0 ]
+    then
+      return
+    else
+      rm -rf "$2/${1##*/}"
+    fi
+  fi
+  curl -Ls -o "$2/${1##*/}" "$1"
+  echo-if-verbose " OK"
+}
+
+DEST_DIR="${DEST_DIR:=$DEFAULT_DEST_DIR}"
+WWW_DIR="${WWW_DIR:=$DEFAULT_WWW_DIR}"
+FORCE_REGENERATE="${FORCE_REGENERATE:=$DEFAULT_FORCE_REGENERATE}"
+VERBOSE="${VERBOSE:=$DEFAULT_VERBOSE}"
+
+while getopts "d:w:fqvh" OPT
+do
+  case "$OPT" in
+    d)
+      DEST_DIR="$OPTARG"
+      ;;
+    w)
+      WWW_DIR="$OPTARG"
+      ;;
+    f)
+      FORCE_REGENERATE=1
+      ;;
+    q)
+      VERBOSE=0
+      ;;
+    v)
+      VERBOSE=1
+      ;;
+    h)
+      print-help
+      exit 0
+      ;;
+    *)
+      cat >&2 << EOF
+${0##*/}: invalid option -- '$OPT'
+Try '#{0##*/} -h' for more infromation.
+EOF
+      exit 1
+      ;;
+  esac
+done
+
+readonly DEST_DIR
+readonly WWW_DIR
+readonly FORCE_REGENERATE
+readonly VERBOSE
+readonly JAR_DIR="${JAR_DIR:=$DEST_DIR/jar}"
+readonly XML_DIR="${XML_DIR:=$DEST_DIR/xml}"
+readonly CSS_DIR="${CSS_DIR:=$WWW_DIR/plugin_wolf/css}"
+readonly IMG_DIR="${IMG_DIR:=$WWW_DIR/plugin_wolf/img}"
+readonly JS_DIR="${JS_DIR:=$WWW_DIR/plugin_wolf/js}"
+
+shift $((OPTIND - 1))
+
+for DIR in "$DEST_DIR" "$JAR_DIR" "$XML_DIR" "$WWW_DIR" "$CSS_DIR" "$IMG_DIR" "$JS_DIR"
+do
+  if [ ! -d "$DIR" ]
+  then
+    mkdir -p$([ "$VERBOSE" -eq 0 ] || echo v) "$DIR"
+  fi
+done
+unset DIR
+
+if [ "$FORCE_REGENERATE" -eq 1 -o ! -e "$CSS_DIR/wolfbbs.css" ]
+then
+  cp -a$([ "$VERBOSE" -eq 0 ] || echo v) \
+    "$PROJECT_HOME_DIR/src/css/wolfbbs.css" \
+    "$CSS_DIR/wolfbbs.css"
+  "$MINIFY_CSS" "$CSS_DIR/wolfbbs.css"
+fi
+
+if [ "$FORCE_REGENERATE" -eq 1 -o ! -e "$JS_DIR/wolfbbs.js" ]
+then
+  cp -a$([ "$VERBOSE" -eq 0 ] || echo v) \
+    "$PROJECT_HOME_DIR/src/js/wolfbbs.js" \
+    "$JS_DIR/wolfbbs.js"
+  "$MINIFY_JS" "$JS_DIR/wolfbbs.js"
+fi
+
+if [ "$FORCE_REGENERATE" -eq 1 -o ! -e "$JS_DIR/$JQUERY" ]
+then
+  download "$JQUERY_URL" "$JS_DIR" "${0##*/}"
+fi
+
+if [ "$FORCE_REGENERATE" -eq 1 -o ! -e "$JS_DIR/jquery.js" ]
+then
+  ln -sfn$([ "$VERBOSE" -eq 0 ] || echo v) "$JQUERY" "$JS_DIR/jquery.js"
+fi
+
+if [ "$FORCE_REGENERATE" -eq 1 -o ! -e "$JAR_DIR/$JINARCHIVER" ]
+then
+  download "$JINARCHIVER_URL" "$JAR_DIR" "${0##*/}"
+fi
+
+if [ "$FORCE_REGENERATE" -eq 1 -o ! -e "$IMG_DIR/favicon.ico" ]
+then
+  download "$WOLFBBS_FAVICON_URL" "$IMG_DIR" "${0##*/}"
+fi
+
+for IMAGE in $(seq 1 20 | "$AWK" '{ printf("face%02d.jpg ", $0) }') face99.jpg title.jpg
+do
+  if [ "$FORCE_REGENERATE" -eq 1 -o ! -e "$IMG_DIR/$IMAGE" ]
+  then
+    download "$WOLFBBS_IMAGE_URL_BASE/$IMAGE" "$IMG_DIR" "${0##*/}"
+  fi
+done
+unset IMAGE
+
+for ORIGINAL_ARG in $([ "$#" -gt 0 ] && echo "$@"  || print-all-village-numbers)
+do
+  ARG="$(tr a-z A-Z <<< "$ORIGINAL_ARG")"
+  if ! "$GREP" -Esq '^[0ABCDEFG]?[0-9]+$' <<< "$ARG"
+  then
+    "$ECHO" "${0##*/}: $ORIGINAL_ARG: invalid village number. ignore." >&2
+    continue
+  fi
+  if "$GREP" -sq "^[0ABCDEFG]" <<< "$ARG"
+  then
+    LAND="$(tr A-Z a-z <<< "${ARG:0:1}")"
+    VID="$("$SED" 's/^0*//' <<< "${ARG:1}")"
+  else
+    LAND=""
+    VID="$("$SED" 's/^0*//' <<< "$ARG")"
+  fi
+  JIN_LAND="wolf$LAND"
+  XML="jin_${JIN_LAND}_$(printf '%05d' "$VID").xml"
+  if [ "$FORCE_REGENERATE" -eq 1 -o ! -f "$XML_DIR/$XML" ]
+  then
+    if [ -f "$XML_DIR/$XML" ]
+    then
+      rm -rf "$XML_DIR/$XML"
+    fi
+    echo-if-verbose -n "${0##*/}: downloading and parsing $ARG to $XML_DIR/$XML ..."
+    "$JAVA" -jar "$JAR_DIR/$JINARCHIVER" -land "$JIN_LAND" -vid "$VID" -outdir "$XML_DIR"
+    echo-if-verbose " OK"
+  fi
+  HTML="$LAND$VID.html"
+  if [ "$FORCE_REGENERATE" -eq 1 -o ! -f "$WWW_DIR/$HTML" ]
+  then
+    echo-if-verbose -n "${0##*/}: converting $XML_DIR/$XML to $WWW_DIR/$HTML..."
+    "$AWK" -f "$XML2HTML_AWK" "$XML_DIR/$XML" > "$WWW_DIR/$HTML"
+    "$SED" -i 's%\(<p id="select-day">\)\(</p>\)%\1'"$("$AWK" -f "$GENERATE_SELECT_DAY_AWK" "$WWW_DIR/$HTML")"'\2%' "$WWW_DIR/$HTML"
+    "$MINIFY_HTML" "$WWW_DIR/$HTML"
+    echo-if-verbose " OK"
+  fi
+done
+
+# End bin/save-wolfbbs

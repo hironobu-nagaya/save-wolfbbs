@@ -1,0 +1,7 @@
+# Begin .gitignore
+
+.DS_Store
+/dest/
+/dest/**
+
+# End .gitignore
